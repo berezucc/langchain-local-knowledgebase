@@ -9,9 +9,8 @@ import { parse as parseUrl } from 'url'
 import { join, extname, basename } from 'path'
 
 /* Open AI | LLM*/
-import { OpenAI } from 'langchain/llms/openai'
-import { ChatOpenAI } from 'langchain/chat_models/openai'
-import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
+import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
+import { OpenAI, ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { PromptTemplate } from 'langchain/prompts'
 import { LLMChain, VectorDBQAChain } from 'langchain/chains'
 
@@ -31,6 +30,7 @@ import { createClient } from 'redis'
 /* OpenSearch */
 import { Client } from '@opensearch-project/opensearch'
 import { OpenSearchVectorStore } from 'langchain/vectorstores/opensearch'
+
 
 const client = new Client({
   nodes: [process.env.OPENSEARCH_URL ?? 'http://127.0.0.1:9200'],
@@ -106,6 +106,8 @@ app.delete('/api/collection', async (req, res) => {
       {
         client,
         indexName: encodedCollection,
+        azureOpenAIApiKey: process.env.OPENAI_API_KEY, 
+        azureOpenAIApiDeploymentName: "text-embedding-ada-002", 
       }
     )
     vectorStore.deleteIfExists()
@@ -208,6 +210,10 @@ app.post('/api/add', async (req, res) => {
         {
           client,
           indexName: encodedCollection,
+          azureOpenAIApiKey: process.env.OPENAI_API_KEY, 
+          azureOpenAIApiVersion: "2023-06-01-preview",
+          azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
+          azureOpenAIApiDeploymentName: "text-embedding-ada-002", 
         }
       )
       vectorStore = null
@@ -259,6 +265,10 @@ app.post('/api/add', async (req, res) => {
         {
           client,
           indexName: encodedCollection,
+          azureOpenAIApiKey: process.env.OPENAI_API_KEY, 
+          azureOpenAIApiVersion: "2023-06-01-preview",
+          azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
+          azureOpenAIApiDeploymentName: "text-embedding-ada-002", 
         }
       )
       vectorStore = null
@@ -282,6 +292,8 @@ app.post('/api/live', async (req, res) => {
   try {
     const model = new ChatOpenAI({
       temperature: temperature,
+      azureOpenAIApiKey: process.env.OPENAI_API_KEY, 
+      azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME, 
     })
     const embeddings = new OpenAIEmbeddings()
     const browser = new WebBrowser({ model, embeddings })
@@ -308,6 +320,10 @@ app.post('/api/question', async (req, res) => {
 
   let encodedCollection = await sanitize(collection)
 
+  const endpoint = "https://chatbot-gpt35-test.openai.azure.com/";
+  const credential = new AzureKeyCredential(process.env.OPENAI_API_KEY);
+  const client = new OpenAIClient(endpoint, credential);
+
   const llm = new OpenAI({
     modelName: model,
     concurrency: 15,
@@ -315,6 +331,10 @@ app.post('/api/question', async (req, res) => {
     //timeout: 10000,
     cache,
     temperature: temperature,
+    azureOpenAIApiKey: process.OPENAI_API_KEY,
+    azureOpenAIApiVersion: "2023-07-01-preview",
+    // azureOpenAIApiInstanceName: "{https://chatbot-gpt35-test.openai.azure.com/}",
+    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
   })
 
   let loadCollection = await sanitize(collection)
@@ -323,8 +343,12 @@ app.post('/api/question', async (req, res) => {
     vectorStore = await OpenSearchVectorStore.fromExistingIndex(
       new OpenAIEmbeddings(),
       {
-        client,
+        // client,
         indexName: encodedCollection,
+        azureOpenAIApiKey: process.env.OPENAI_API_KEY, 
+        azureOpenAIApiVersion: "2023-06-01-preview",
+        azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
+        azureOpenAIApiDeploymentName: "text-embedding-ada-002", 
       }
     )
   } catch (err) {
@@ -370,6 +394,18 @@ app.post('/api/question', async (req, res) => {
     console.error(err)
     res.status(500).json({ message: 'Error processing the request' })
   }
+})
+
+app.post('/api/test', async (req, res) => {
+  const model = new ChatOpenAI({
+    temperature: 0.9,
+    azureOpenAIApiKey: "SOME_SECRET_VALUE", // In Node.js defaults to process.env.AZURE_OPENAI_API_KEY
+    azureOpenAIApiVersion: "YOUR-API-VERSION", // In Node.js defaults to process.env.AZURE_OPENAI_API_VERSION
+    azureOpenAIApiDeploymentName: "{DEPLOYMENT_NAME}", // In Node.js defaults to process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME
+    azureOpenAIBasePath:
+      "https://westeurope.api.microsoft.com/openai/deployments", // In Node.js defaults to process.env.AZURE_OPENAI_BASE_PATH
+  });
+
 })
 
 function cleanFilePath(filePath) {
@@ -511,6 +547,8 @@ async function addURL(url, encodedCollection, chunkSize, chunkOverlap) {
     {
       client,
       indexName: encodedCollection,
+      azureOpenAIApiKey: process.env.OPENAI_API_KEY, 
+      azureOpenAIApiDeploymentName: "text-embedding-ada-002", 
     }
   )
   vectorStore = null

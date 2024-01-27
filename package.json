@@ -11,16 +11,21 @@
   "author": "Voiceflow | NiKo",
   "license": "ISC",
   "dependencies": {
+    "@azure/openai": "^1.0.0-beta.10",
+    "@langchain/openai": "^0.0.12",
     "@opensearch-project/opensearch": "^2.2.1",
     "@zilliz/milvus2-sdk-node": "^2.2.6",
-    "axios": "^0.26.1",
+    "axios": "^1.6.6",
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.0.3",
     "express": "^4.17.1",
-    "langchain": "^0.0.64",
-    "openai": "^3.2.1",
+    "langchain": "^0.1.6",
+    "openai": "^4.25.0",
     "pdf-parse": "^1.1.1",
     "redis": "^4.6.5",
     "sitemap-xml-parser": "^0.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
